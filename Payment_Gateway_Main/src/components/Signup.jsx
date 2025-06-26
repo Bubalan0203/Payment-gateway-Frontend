@@ -8,22 +8,40 @@ import SignupSuccess from './SignupSuccess';
 export default function Signup() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '', confirmPassword: '',
-    securityQuestion: '', securityAnswer: '',
-    accountNumber: '', ifsc: '', bankName: '',
-    addressLine1: '', addressLine2: '', city: '', state: '', country: '', zip: '',
-    panCardNumber: '', aadhaarNumber: ''
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    securityQuestion: '',
+    securityAnswer: '',
+    bankAccountNumber: '',
+    ifsc: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    country: '',
+    zip: '',
+    panCard: '',
+    aadhaarCard: ''
   });
 
   const next = () => setStep(prev => prev + 1);
   const back = () => setStep(prev => prev - 1);
 
   switch (step) {
-    case 1: return <SignupStep1 formData={formData} setFormData={setFormData} next={next} />;
-    case 2: return <SignupStep2 formData={formData} setFormData={setFormData} next={next} back={back} />;
-    case 3: return <SignupStep3 formData={formData} setFormData={setFormData} next={next} back={back} />;
-    case 4: return <SignupStep4 formData={formData} setFormData={setFormData} next={next} back={back} />;
-    case 5: return <SignupSuccess />;
-    default: return null;
+    case 1:
+      return <SignupStep1 formData={formData} setFormData={setFormData} next={next} />;
+    case 2:
+      return <SignupStep2 formData={formData} setFormData={setFormData} next={next} back={back} />;
+    case 3:
+      return <SignupStep3 formData={formData} setFormData={setFormData} next={next} back={back} />;
+    case 4:
+      return <SignupStep4 formData={formData} setFormData={setFormData} back={back} />;
+    case 5:
+      return <SignupSuccess />;
+    default:
+      return null;
   }
 }

@@ -58,9 +58,11 @@ export default function SignupStep1({ formData, setFormData, next }) {
 
   const handleNext = e => {
     e.preventDefault();
-    const { name, email, password, confirmPassword, securityQuestion, securityAnswer } = formData;
-    if (!name || !email || !password || !confirmPassword || !securityQuestion || !securityAnswer)
+    const { name, email, password, confirmPassword, securityQuestion, securityAnswer, phone } = formData;
+    if (!name || !email || !password || !confirmPassword || !securityQuestion || !securityAnswer || !phone)
       return alert('All fields are required');
+    if (!/^\d{10}$/.test(phone))
+      return alert('Enter a valid 10-digit phone number');
     if (password !== confirmPassword)
       return alert('Passwords do not match');
     next();
@@ -73,6 +75,7 @@ export default function SignupStep1({ formData, setFormData, next }) {
         <form onSubmit={handleNext}>
           <Input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
           <Input name="email" value={formData.email} onChange={handleChange} placeholder="Email" />
+          <Input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" />
           <Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="Password" />
           <Input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm Password" />
           <Input name="securityQuestion" value={formData.securityQuestion} onChange={handleChange} placeholder="Security Question" />

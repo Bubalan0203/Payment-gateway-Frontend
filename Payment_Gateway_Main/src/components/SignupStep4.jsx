@@ -79,9 +79,31 @@ export default function SignupStep4({ formData, setFormData, back }) {
     if (!panCard || !aadhaarCard)
       return alert('Please enter both PAN and Aadhaar card numbers');
 
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone,
+      securityQuestion: formData.securityQuestion,
+      securityAnswer: formData.securityAnswer,
+      bankAccountNumber: formData.bankAccountNumber,
+      address: {
+        line1: formData.addressLine1,
+        line2: formData.addressLine2,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        zip: formData.zip,
+      },
+      kyc: {
+        panCardNumber: formData.panCard,
+        aadhaarNumber: formData.aadhaarCard
+      }
+    };
+
     setSubmitting(true);
     try {
-      await api.post('/auth/signup', formData);
+      await api.post('/auth/signup', payload);
       alert('Signup successful. Admin will verify and activate your account.');
       navigate('/signup-success');
     } catch (err) {

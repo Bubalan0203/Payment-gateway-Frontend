@@ -12,6 +12,8 @@ import PaymentReceipt from './components/PaymentReceipt';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './components/Home';
+import EnterAmount from './components/EnterAmount'; 
+
 function App() {
   return (
     <>
@@ -24,6 +26,7 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/payment/:code" element={<EnterAmount />} /> 
         <Route path="/payment/:code/:amount" element={<PublicPayment />} />
         <Route path="/admin/user/:userId" element={<AdminUserInfo />} />
         <Route path="/signup-success" element={<SignupSuccess />} />
