@@ -60,7 +60,7 @@ export default function PaymentForm() {
     e.preventDefault();
     if (!amount || isNaN(amount)) return alert('Enter a valid amount');
 
-    const integrationId = 'f9401384-25bb-402c-b0fb-5761c6f929a5';
+    const integrationId = 'preethika@paygate';
     const returnUrl = `${window.location.origin}/payment-result`;
     window.location.href = `http://localhost:3000/payment/${integrationId}/${amount}?returnUrl=${encodeURIComponent(returnUrl)}`;
   };
