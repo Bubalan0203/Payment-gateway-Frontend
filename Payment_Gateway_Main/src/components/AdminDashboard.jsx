@@ -66,9 +66,9 @@ const SidebarLink = styled.div`
 const MainContent = styled.div`
   flex: 1;
   padding: 2rem;
-  width:50%;
+  min-width: 0; /* 🧠 important when using flex + overflow */
+  overflow: hidden; /* prevents sidebar bleed */
 `;
-
 const HeaderCard = styled.div`
   background: linear-gradient(90deg,#4f46e5,#9333ea);
   color:#fff;
@@ -104,7 +104,7 @@ const StatText = styled.div`
 
 const Table = styled.table`
   width: 100%;
-  min-width: 1300px;      /* prevents squeezing                       */
+  min-width: 1400px;     /* prevents squeezing                       */
   border-collapse: collapse;
   background: #fff;
   border-radius: 12px;
@@ -128,7 +128,7 @@ const Td = styled.td`
   font-size: 0.9rem;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 `;
 
@@ -150,6 +150,21 @@ const StatusBadge = styled.span`
 const ScrollWrapper = styled.div`
   width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
+  margin-top: 1rem;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 `;
 
 const ModalOverlay = styled.div`
@@ -170,7 +185,7 @@ const ModalContent = styled.div`
 `;
 
 const ActionBtn = styled.button`
-  padding:0.45rem 0.9rem;
+  
   font-size:0.85rem;
   font-weight:600;
   border-radius:8px;
@@ -394,6 +409,7 @@ export default function AdminDashboard() {
                   <thead>
                     <tr>
                       <Th style={{width:'60px'}}>S No</Th>
+                       <Th style={{width:'120px'}}>Merchant Id</Th>
                       <Th style={{width:'120px'}}>Incoming<br/>Status</Th>
                       <Th style={{width:'170px'}}>Customer Time</Th>
                       <Th style={{width:'110px'}}>Amount</Th>
@@ -409,6 +425,7 @@ export default function AdminDashboard() {
                     {txSlice.map((tx,idx)=>(
                       <tr key={tx._id}>
                         <Td>{(txPage-1)*ROWS_PER_PAGE + idx + 1}</Td>
+                        <Td>{tx.integrationCode??'–'}</Td>
                         <Td><StatusBadge status={tx.payeeToAdminStatus} onClick={()=>openStatusModal('payee',tx.payeeToAdminDescription)}>{tx.payeeToAdminStatus}</StatusBadge></Td>
                         <WideCol>{tx.payeeToAdminTime ? new Date(tx.payeeToAdminTime).toLocaleString() : '–'}</WideCol>
                         <Td>₹{tx.originalAmount??'–'}</Td>

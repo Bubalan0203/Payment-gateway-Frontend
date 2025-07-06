@@ -180,7 +180,7 @@ const currentData = transactions.slice((currentPage - 1) * itemsPerPage, current
       </Header>
 
       <Grid>
-        <StatBox><strong>Total Amount:</strong><br/>₹{totalAmount}</StatBox>
+        <StatBox><strong>Transaction Amount:</strong><br/>₹{totalAmount}</StatBox>
         <StatBox><strong>Total Transactions:</strong><br/>{transactions.length}</StatBox>
         <StatBox><strong>Successful:</strong><br/>{successCount}</StatBox>
         <StatBox><strong>Failed:</strong><br/>{failedCount}</StatBox>
