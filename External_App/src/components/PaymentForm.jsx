@@ -62,7 +62,7 @@ export default function PaymentForm() {
 
     const integrationId = 'suveatha@paygate';
     const returnUrl = `${window.location.origin}/payment-result`;
-    window.location.href = `http://localhost:3000/payment/${integrationId}/${amount}?returnUrl=${encodeURIComponent(returnUrl)}`;
+    window.location.href = `https://payment-gateway-frontend-chi.vercel.app/payment/${integrationId}/${amount}?returnUrl=${encodeURIComponent(returnUrl)}`;
   };
 
   return (
