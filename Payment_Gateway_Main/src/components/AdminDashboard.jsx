@@ -260,12 +260,14 @@ const pendingCount = transactions.filter(t => t.overallStatus === 'pending').len
     (usersPage - 1) * ROWS_PER_PAGE,
     usersPage * ROWS_PER_PAGE
   );
-
-  const txPageMax = Math.max(1, Math.ceil(totalTx / ROWS_PER_PAGE));
-  const txSlice   = transactions.slice(
-    (txPage - 1) * ROWS_PER_PAGE,
-    txPage * ROWS_PER_PAGE
-  );
+const sortedTransactions = [...transactions].sort(
+  (a, b) => new Date(b.payeeToAdminTime) - new Date(a.payeeToAdminTime)
+);
+const txPageMax = Math.max(1, Math.ceil(sortedTransactions.length / ROWS_PER_PAGE));
+const txSlice   = sortedTransactions.slice(
+  (txPage - 1) * ROWS_PER_PAGE,
+  txPage * ROWS_PER_PAGE
+);
 const handleSettleAll = async () => {
   try {
     const res = await api.put('/admin/transactions/settle-all');
@@ -456,28 +458,54 @@ const handleSettleAll = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {txSlice.map((tx,idx)=>(
-                      <tr key={tx._id}>
-                        <Td>{(txPage-1)*ROWS_PER_PAGE + idx + 1}</Td>
-                        <Td>{tx.integrationCode??'–'}</Td>
-                        <Td><StatusBadge status={tx.payeeToAdminStatus} onClick={()=>openStatusModal('payee',tx.payeeToAdminDescription)}>{tx.payeeToAdminStatus}</StatusBadge></Td>
-                        <WideCol>{tx.payeeToAdminTime ? new Date(tx.payeeToAdminTime).toLocaleString() : '–'}</WideCol>
-                        <Td>₹{tx.originalAmount??'–'}</Td>
-                        <Td>₹{tx.commission??'–'}</Td>
-                        <Td><StatusBadge status={tx.adminToMerchantStatus} onClick={()=>openStatusModal('admin',tx.adminToMerchantDescription)}>{tx.adminToMerchantStatus}</StatusBadge></Td>
-                        <WideCol>{tx.adminToMerchantTime ? new Date(tx.adminToMerchantTime).toLocaleString() : '–'}</WideCol>
-                        <Td>₹{tx.amountToMerchant??'–'}</Td>
-                        <Td><StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge></Td>
-                        <Td>
-                          {tx.overallStatus==='pending'
-                            ? (<>
-                                <ActionBtn style={{marginRight:'.5rem'}} onClick={()=>handleApproveTxn(tx._id)}>Approve</ActionBtn>
-                                <ActionBtn $variant="danger" onClick={()=>openRejectModal(tx._id)}>Reject</ActionBtn>
-                              </>)
-                            : '—'}
-                        </Td>
-                      </tr>
-                    ))}
+{txSlice.map((tx, idx) => (
+    <tr key={tx._id}>
+      <Td>{(txPage - 1) * ROWS_PER_PAGE + idx + 1}</Td>
+      <Td>{tx.integrationCode ?? '–'}</Td>
+      <Td>
+        <StatusBadge
+          status={tx.payeeToAdminStatus}
+          onClick={() => openStatusModal('payee', tx.payeeToAdminDescription)}
+        >
+          {tx.payeeToAdminStatus}
+        </StatusBadge>
+      </Td>
+      <WideCol>
+        {tx.payeeToAdminTime ? new Date(tx.payeeToAdminTime).toLocaleString() : '–'}
+      </WideCol>
+      <Td>₹{tx.originalAmount ?? '–'}</Td>
+      <Td>₹{tx.commission ?? '–'}</Td>
+      <Td>
+        <StatusBadge
+          status={tx.adminToMerchantStatus}
+          onClick={() => openStatusModal('admin', tx.adminToMerchantDescription)}
+        >
+          {tx.adminToMerchantStatus}
+        </StatusBadge>
+      </Td>
+      <WideCol>
+        {tx.adminToMerchantTime ? new Date(tx.adminToMerchantTime).toLocaleString() : '–'}
+      </WideCol>
+      <Td>₹{tx.amountToMerchant ?? '–'}</Td>
+      <Td>
+        <StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge>
+      </Td>
+      <Td>
+        {tx.overallStatus === 'pending' ? (
+          <>
+            <ActionBtn style={{ marginRight: '.5rem' }} onClick={() => handleApproveTxn(tx._id)}>
+              Approve
+            </ActionBtn>
+            <ActionBtn $variant="danger" onClick={() => openRejectModal(tx._id)}>
+              Reject
+            </ActionBtn>
+          </>
+        ) : (
+          '—'
+        )}
+      </Td>
+    </tr>
+))}
                   </tbody>
                 </Table>
               </ScrollWrapper>

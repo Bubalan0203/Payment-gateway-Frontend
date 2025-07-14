@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api';
 import styled from 'styled-components';
 import { Modal, Button as BSButton } from 'react-bootstrap';
+import OTPFlow from 'raj-otp';
 
 const Wrapper = styled.div`
   display: flex;
@@ -76,33 +77,33 @@ const SubmitButton = styled.button`
   }
 `;
 
-const ErrorScreen = styled.div`
-  text-align: center;
-  padding: 4rem;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
-  max-width: 500px;
-`;
-
-const ErrorText = styled.p`
-  font-size: 1.1rem;
-  color: #b91c1c;
-  margin-top: 1rem;
-`;
-
 export default function PublicPayment() {
   const { code, amount } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [form, setForm] = useState({ name: '', accountNumber: '', ifsc: '' });
+  const [form, setForm] = useState({
+    bankName: '',
+    accountHolderName: '',
+    accountNumber: '',
+    ifsc: '',
+    phoneNumber: ''
+  });
+
   const [integrationValid, setIntegrationValid] = useState(false);
   const [modal, setModal] = useState({ show: false, success: false, message: '' });
+  const [showOTP, setShowOTP] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const returnUrl = queryParams.get('returnUrl');
-  const parsedAmount = parseFloat(amount);
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   useEffect(() => {
     const checkIntegration = async () => {
@@ -117,55 +118,43 @@ export default function PublicPayment() {
     checkIntegration();
   }, [code, navigate]);
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-
-  // 🔴 Check max limit
-  if (parsedAmount > 100000) {
-    const message = `Amount ₹${amount} exceeds the ₹1,00,000 limit.`;
-
-    if (returnUrl) {
-      const redirectUrl = new URL(returnUrl);
-      redirectUrl.searchParams.set('status', 'failed');
-      redirectUrl.searchParams.set('message', message);
-      redirectUrl.searchParams.set('amount', amount);
-      redirectUrl.searchParams.set('timestamp', new Date().toISOString());
-      window.location.href = redirectUrl.toString();
-    }
-
-    return (
-      <Wrapper>
-        <ErrorScreen>
-          <Title>Transaction Blocked</Title>
-          <ErrorText>{message}</ErrorText>
-        </ErrorScreen>
-      </Wrapper>
-    );
-  }
-
   const handleSubmit = async e => {
     e.preventDefault();
-    try {
-      const res = await api.post(`/public/pay/${code}/${amount}`, form);
+    setShowOTP(true); // Start OTP flow
+  };
 
-      navigate('/payment/receipt', {
+  const handleOTPComplete = async (data) => {
+    console.log(data)
+    if (data.stage === 'verified') {
+      try {
+        const res = await api.post(`/public/pay/${code}/${amount}`, form);
+        navigate('/payment/receipt', {
+          state: {
+            transactionId: res.data?.transaction?._id || Math.random().toString(36).substring(2),
+            ...form,
+            amount,
+            status: 'Success',
+            timestamp: new Date().toLocaleString(),
+            merchant: res.data?.merchantName || 'Merchant',
+            reference: res.data?.reference || Math.random().toString(36).substring(2, 10).toUpperCase(),
+            returnUrl: returnUrl || null
+          }
+        });
+      } catch (err) {
+        navigate(returnUrl || '/', {
+          state: {
+            status: 'Failed',
+            reason: err.response?.data?.error || 'OTP Verified but transaction failed.'
+          }
+        });
+      }
+    } else if (data.stage === 'error') {
+      alert('❌ OTP verification failed or expired. Transaction aborted.');
+      navigate(returnUrl || '/', {
         state: {
-          transactionId: res.data?._id || Math.random().toString(36).substring(2),
-          name: form.name,
-          accountNumber: form.accountNumber,
-          ifsc: form.ifsc,
-          amount,
-          status: 'Success',
-          timestamp: new Date().toLocaleString(),
-          merchant: res.data?.merchantName || 'Merchant',
-          reference: res.data?.reference || Math.random().toString(36).substring(2, 10).toUpperCase(),
-          returnUrl: returnUrl || null
+          status: 'Failed',
+          reason: 'OTP verification failed'
         }
-      });
-    } catch (err) {
-      setModal({
-        show: true,
-        success: false,
-        message: err.response?.data?.error || 'Payment failed'
       });
     }
   };
@@ -178,8 +167,19 @@ export default function PublicPayment() {
   if (!integrationValid)
     return <h5 className="text-danger text-center mt-4">This merchant is not active or code is invalid.</h5>;
 
-  return (
-    <Wrapper>
+return (
+  <Wrapper>
+    {showOTP ? (
+      <FormCard>
+        <Title>Verifying OTP</Title>
+        <OTPFlow
+          secretKey="9D941AF69FAA5E041172D29A8B459BB4"
+          apiEndpoint="http://192.168.165.190:3002/api/check-otp-availability"
+          onComplete={handleOTPComplete}
+          initialTheme="light"
+        />
+      </FormCard>
+    ) : (
       <FormCard>
         <Title>Enter Payment Details</Title>
         <Subtitle>Fill in your bank details to proceed with ₹{amount}</Subtitle>
@@ -188,10 +188,20 @@ export default function PublicPayment() {
           <Label>Amount (₹)</Label>
           <Input type="text" value={amount} readOnly disabled />
 
-          <Label>Your Name</Label>
+          <Label>Bank Name</Label>
           <Input
-            name="name"
-            placeholder="Enter your name"
+            name="bankName"
+            placeholder="Enter your bank name"
+            value={form.bankName}
+            onChange={handleChange}
+            required
+          />
+
+          <Label>Account Holder Name</Label>
+          <Input
+            name="accountHolderName"
+            placeholder="Enter the account holder's name"
+            value={form.accountHolderName}
             onChange={handleChange}
             required
           />
@@ -200,6 +210,7 @@ export default function PublicPayment() {
           <Input
             name="accountNumber"
             placeholder="Enter your bank account number"
+            value={form.accountNumber}
             onChange={handleChange}
             required
           />
@@ -208,6 +219,16 @@ export default function PublicPayment() {
           <Input
             name="ifsc"
             placeholder="Enter IFSC code"
+            value={form.ifsc}
+            onChange={handleChange}
+            required
+          />
+
+          <Label>Phone Number</Label>
+          <Input
+            name="phoneNumber"
+            placeholder="Enter your mobile number"
+            value={form.phoneNumber}
             onChange={handleChange}
             required
           />
@@ -215,21 +236,27 @@ export default function PublicPayment() {
           <SubmitButton type="submit">Continue to Pay</SubmitButton>
         </form>
       </FormCard>
+    )}
 
-      <Modal show={modal.show} onHide={handleModalClose} centered backdrop="static">
-        <Modal.Header closeButton>
-          <Modal.Title>{modal.success ? 'Success' : 'Failed'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>{modal.message}</Modal.Body>
-        <Modal.Footer>
-          <BSButton
-            variant={modal.success ? 'success' : 'danger'}
-            onClick={handleModalClose}
-          >
-            Close
-          </BSButton>
-        </Modal.Footer>
-      </Modal>
-    </Wrapper>
-  );
+    <Modal
+      show={modal.show}
+      onHide={handleModalClose}
+      centered
+      backdrop="static"
+    >
+      <Modal.Header closeButton>
+        <Modal.Title>{modal.success ? 'Success' : 'Failed'}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>{modal.message}</Modal.Body>
+      <Modal.Footer>
+        <BSButton
+          variant={modal.success ? 'success' : 'danger'}
+          onClick={handleModalClose}
+        >
+          Close
+        </BSButton>
+      </Modal.Footer>
+    </Modal>
+  </Wrapper>
+);
 }

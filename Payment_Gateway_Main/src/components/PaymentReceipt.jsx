@@ -79,35 +79,39 @@ export default function PaymentReceipt() {
     returnUrl,
   } = state || {};
 
-  useEffect(() => {
-    if (!state) return window.location.href = '/';
+useEffect(() => {
+  if (!state) return window.location.href = '/';
 
-    const countdown = setInterval(() => {
-      setSeconds(prev => {
-        if (prev <= 1) {
-          clearInterval(countdown);
-          try {
-            const url = new URL(returnUrl);
-            url.searchParams.append('txId', transactionId);
-            url.searchParams.append('reference', reference);
-            url.searchParams.append('merchant', merchant);
-            url.searchParams.append('name', name);
-            url.searchParams.append('accountNumber', accountNumber);
-            url.searchParams.append('ifsc', ifsc);
-            url.searchParams.append('amount', amount);
-            url.searchParams.append('status', status);
-            url.searchParams.append('timestamp', timestamp);
-            window.location.href = url.toString();
-          } catch (err) {
-            console.error('Invalid return URL');
-          }
+  const countdown = setInterval(() => {
+    setSeconds(prev => {
+      if (prev <= 1) {
+        clearInterval(countdown);
+        try {
+          const url = returnUrl?.startsWith('http')
+            ? new URL(returnUrl)
+            : new URL(`${window.location.origin}${returnUrl}`);
+          
+          url.searchParams.append('txId', transactionId);
+          url.searchParams.append('reference', reference);
+          url.searchParams.append('merchant', merchant);
+          url.searchParams.append('name', name);
+          url.searchParams.append('accountNumber', accountNumber);
+          url.searchParams.append('ifsc', ifsc);
+          url.searchParams.append('amount', amount);
+          url.searchParams.append('status', status);
+          url.searchParams.append('timestamp', timestamp);
+
+          window.location.href = url.toString();
+        } catch (err) {
+          console.error('Invalid return URL');
         }
-        return prev - 1;
-      });
-    }, 1000);
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
-    return () => clearInterval(countdown);
-  }, [state, transactionId, returnUrl]);
+  return () => clearInterval(countdown);
+}, [state, transactionId, returnUrl]);
 
   const handleDownload = () => {
     const text = `
