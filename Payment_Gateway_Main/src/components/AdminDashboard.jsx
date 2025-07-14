@@ -216,9 +216,11 @@ export default function AdminDashboard() {
   const [rejectionReason,setRejectionReason] = useState('');
   const [selectedTxnId,setSelectedTxnId]     = useState('');
   const [statusDescModal,setStatusDescModal] = useState({show:false,type:'',description:''});
+const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const navigate  = useNavigate();
-
+const pendingCount = transactions.filter(t => t.overallStatus === 'pending').length;
+<p>You are about to settle <strong>{pendingCount}</strong> pending transactions.</p>
   /* pagination state */
   const ROWS_PER_PAGE = 10;
   const [usersPage, setUsersPage] = useState(1);
@@ -264,7 +266,16 @@ export default function AdminDashboard() {
     (txPage - 1) * ROWS_PER_PAGE,
     txPage * ROWS_PER_PAGE
   );
-
+const handleSettleAll = async () => {
+  try {
+    const res = await api.put('/admin/transactions/settle-all');
+    alert(res.data.message || 'All pending transactions settled');
+    setShowConfirmModal(false);
+    refreshAll(); // Correct function
+  } catch (err) {
+    alert(err.response?.data?.error || 'Failed to settle transactions');
+  }
+};
   /* ─── render ─── */
   return (
     <>
@@ -298,7 +309,23 @@ export default function AdminDashboard() {
           </ModalContent>
         </ModalOverlay>
       )}
-
+       {/* ------------- showSettleAllModal modal ------------- */}
+{showConfirmModal && (
+  <ModalOverlay>
+    <ModalContent>
+      <h3>Are you sure you want to settle all payments?</h3>
+      <p>This will mark all <strong>pending transactions</strong> as settled and transfer funds to the merchant accounts.</p>
+      <div style={{ marginTop: '1.25rem', textAlign: 'right' }}>
+        <ActionBtn onClick={handleSettleAll} style={{ marginRight: '.75rem' }}>
+          Yes, Settle All
+        </ActionBtn>
+        <ActionBtn $variant="secondary" onClick={() => setShowConfirmModal(false)}>
+          Cancel
+        </ActionBtn>
+      </div>
+    </ModalContent>
+  </ModalOverlay>
+)}
       {/* ------------- Layout ------------- */}
       <PageWrapper>
         {/* --- sidebar --- */}
@@ -404,6 +431,13 @@ export default function AdminDashboard() {
           {activeTab==='transactions' && (
             <>
               <h3>Transactions</h3>
+              <ActionBtn
+  onClick={() => setShowConfirmModal(true)}
+  disabled={pendingCount === 0}
+  style={{ opacity: pendingCount === 0 ? 0.6 : 1 }}
+>
+  Accept All Payments
+</ActionBtn>
               <ScrollWrapper>
                 <Table>
                   <thead>
@@ -456,6 +490,7 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
         </MainContent>
       </PageWrapper>
     </>
