@@ -163,6 +163,21 @@ export default function UserLogin() {
             required
           />
           <Button onClick={handleLogin}>Sign In</Button>
+
+          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+  <a
+    href="/forgot-password"
+    style={{
+      color: '#4f46e5',
+      fontWeight: 500,
+      textDecoration: 'underline',
+      cursor: 'pointer',
+    }}
+  >
+    Forgot Password?
+  </a>
+</div>
+
         </FormCard>
       </Right>
     </Page>

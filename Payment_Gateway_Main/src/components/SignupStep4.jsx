@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import api from '../api';
-import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode'; 
+import jwtEncode from 'jwt-encode'; 
 
+const SECRET_KEY = '80-QTH5GkLN9Kg_fUcVl7qsGnqV2TP6ffNnT2XFoH-EAFOA5wc5fuPlc1BOJ1jmAOtUXyyidtkp44kmxqpvy3A'; 
 const Wrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -42,6 +44,12 @@ const Input = styled.input`
   }
 `;
 
+const Row = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: space-between;
@@ -49,8 +57,8 @@ const ButtonGroup = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 0.6rem 1.5rem;
-  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;
   border: none;
@@ -68,49 +76,61 @@ const SubmitButton = styled(Button)`
 
 export default function SignupStep4({ formData, setFormData, back }) {
   const [submitting, setSubmitting] = useState(false);
-  const navigate = useNavigate();
 
-  const handleChange = e =>
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    const { panCard, aadhaarCard } = formData;
-    if (!panCard || !aadhaarCard)
-      return alert('Please enter both PAN and Aadhaar card numbers');
+const verifyPan = async () => {
+  const { panCard } = formData;
+  if (!panCard) return alert('Enter PAN number');
 
-    const payload = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      phone: formData.phone,
-      securityQuestion: formData.securityQuestion,
-      securityAnswer: formData.securityAnswer,
-      bankAccountNumber: formData.bankAccountNumber,
-      address: {
-        line1: formData.addressLine1,
-        line2: formData.addressLine2,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        zip: formData.zip,
-      },
-      kyc: {
-        panCardNumber: formData.panCard,
-        aadhaarNumber: formData.aadhaarCard
-      }
-    };
+  const payload = { panCard };
+  const token = jwtEncode(payload, SECRET_KEY, 'HS512');
 
-    setSubmitting(true);
-    try {
-      await api.post('/auth/signup', payload);
-      alert('Signup successful. Admin will verify and activate your account.');
-      navigate('/signup-success');
-    } catch (err) {
-      alert(err.response?.data?.error || 'Signup failed');
-    } finally {
-      setSubmitting(false);
+  try {
+    const res = await axios.post('http://192.168.162.246:8000/pancard/validate', {
+      token, 
+    });
+
+    const decoded = jwtDecode(res.data.token); 
+    alert(decoded ? ' PAN Verified' : ' Invalid PAN');
+  } catch (err) {
+    console.error(err);
+    alert('PAN verification failed');
+  }
+};
+
+  const verifyAadhaar = async () => {
+  const { aadhaarCard } = formData;
+  if (!aadhaarCard) return alert('Enter Aadhaar number');
+
+  try {
+    const res = await axios.post('https://j6s1rnmt-5000.inc1.devtunnels.ms/check/aadhaar', {
+      "uniqueID":aadhaarCard,
+    });
+
+    // Assuming API returns something like: { valid: true } or { valid: false }
+    if (res.data) {
+      alert('Aadhaar Verified');
+    } else {
+
+      alert('Invalid Aadhaar');
     }
+  } catch (err) {
+    console.error(err);
+    alert('Aadhaar verification failed');
+  }
+};
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.panCard || !formData.aadhaarCard) {
+      alert('Please fill both PAN and Aadhaar fields');
+      return;
+    }
+
+    alert('Signup Step 4 submitted');
   };
 
   return (
@@ -118,22 +138,36 @@ export default function SignupStep4({ formData, setFormData, back }) {
       <Card>
         <Title>Step 4: KYC Details</Title>
         <form onSubmit={handleSubmit}>
-          <Input
-            name="panCard"
-            value={formData.panCard}
-            onChange={handleChange}
-            placeholder="PAN Card Number"
-            required
-          />
-          <Input
-            name="aadhaarCard"
-            value={formData.aadhaarCard}
-            onChange={handleChange}
-            placeholder="Aadhaar Number"
-            required
-          />
+          <Row>
+            <Input
+              name="panCard"
+              value={formData.panCard}
+              onChange={handleChange}
+              placeholder="PAN Card Number"
+              required
+            />
+            <SubmitButton type="button" onClick={verifyPan}>
+              Verify
+            </SubmitButton>
+          </Row>
+
+          <Row>
+            <Input
+              name="aadhaarCard"
+              value={formData.aadhaarCard}
+              onChange={handleChange}
+              placeholder="Aadhaar Number"
+              required
+            />
+            <SubmitButton type="button" onClick={verifyAadhaar}>
+              Verify
+            </SubmitButton>
+          </Row>
+
           <ButtonGroup>
-            <BackButton type="button" onClick={back}>Back</BackButton>
+            <BackButton type="button" onClick={back}>
+              Back
+            </BackButton>
             <SubmitButton type="submit" disabled={submitting}>
               {submitting ? 'Submitting...' : 'Submit'}
             </SubmitButton>
