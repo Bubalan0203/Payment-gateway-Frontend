@@ -7,25 +7,27 @@ import SignupSuccess from './SignupSuccess';
 
 export default function Signup() {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    securityQuestion: '',
-    securityAnswer: '',
-    bankAccountNumber: '',
-    ifsc: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    state: '',
-    country: '',
-    zip: '',
-    panCard: '',
-    aadhaarCard: ''
-  });
+const [formData, setFormData] = useState({
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  phone: '',
+  securityQuestion: '',
+  securityAnswer: '',
+  bankName: '',
+  accountHolderName: '',
+  bankAccountNumber: '',
+  ifsc: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  country: '',
+  zip: '',
+  panCard: '',
+  aadhaarCard: ''
+});
 
   const next = () => setStep(prev => prev + 1);
   const back = () => setStep(prev => prev - 1);

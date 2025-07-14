@@ -42,6 +42,12 @@ const Input = styled.input`
   }
 `;
 
+const ErrorText = styled.p`
+  color: #dc2626;
+  margin: -0.8rem 0 1rem 0;
+  font-size: 0.875rem;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: space-between;
@@ -67,40 +73,71 @@ const SubmitButton = styled(Button)`
 `;
 
 export default function SignupStep4({ formData, setFormData, back }) {
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+const handleChange = e => {
+  const { name, value } = e.target;
 
-  const handleChange = e =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Strip all spaces from Aadhaar and PAN
+  let cleanedValue = value;
+  if (name === 'aadhaarCard' || name === 'panCard') {
+    cleanedValue = value.replace(/\s+/g, '');
+  }
+
+  setFormData({ ...formData, [name]: cleanedValue });
+  setErrors({ ...errors, [name]: '' }); // Clear error on change
+};
+
+  const validate = () => {
+    const { panCard, aadhaarCard } = formData;
+    const newErrors = {};
+
+    if (!panCard)
+      newErrors.panCard = 'PAN number is required';
+    else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panCard.toUpperCase()))
+      newErrors.panCard = 'Enter a valid PAN (e.g., ABCDE1234F)';
+
+    if (!aadhaarCard)
+      newErrors.aadhaarCard = 'Aadhaar number is required';
+    else if (!/^\d{12}$/.test(aadhaarCard))
+      newErrors.aadhaarCard = 'Aadhaar must be 12 digits';
+
+    return newErrors;
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    const { panCard, aadhaarCard } = formData;
-    if (!panCard || !aadhaarCard)
-      return alert('Please enter both PAN and Aadhaar card numbers');
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
     const payload = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      phone: formData.phone,
-      securityQuestion: formData.securityQuestion,
-      securityAnswer: formData.securityAnswer,
-      bankAccountNumber: formData.bankAccountNumber,
-      address: {
-        line1: formData.addressLine1,
-        line2: formData.addressLine2,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        zip: formData.zip,
-      },
-      kyc: {
-        panCardNumber: formData.panCard,
-        aadhaarNumber: formData.aadhaarCard
-      }
-    };
-
+  name: formData.name,
+  email: formData.email,
+  password: formData.password,
+  phone: formData.phone,
+  securityQuestion: formData.securityQuestion,
+  securityAnswer: formData.securityAnswer,
+  bankAccountNumber: formData.bankAccountNumber,
+  bankName: formData.bankName, // ✅ newly added
+  accountHolderName: formData.accountHolderName, // ✅ newly added
+  ifsc: formData.ifsc,
+  address: {
+    line1: formData.addressLine1,
+    line2: formData.addressLine2,
+    city: formData.city,
+    state: formData.state,
+    country: formData.country,
+    zip: formData.zip,
+  },
+  kyc: {
+    panCardNumber: formData.panCard.toUpperCase(),
+    aadhaarNumber: formData.aadhaarCard
+  }
+};
     setSubmitting(true);
     try {
       await api.post('/auth/signup', payload);
@@ -123,15 +160,17 @@ export default function SignupStep4({ formData, setFormData, back }) {
             value={formData.panCard}
             onChange={handleChange}
             placeholder="PAN Card Number"
-            required
           />
+          {errors.panCard && <ErrorText>{errors.panCard}</ErrorText>}
+
           <Input
             name="aadhaarCard"
             value={formData.aadhaarCard}
             onChange={handleChange}
             placeholder="Aadhaar Number"
-            required
           />
+          {errors.aadhaarCard && <ErrorText>{errors.aadhaarCard}</ErrorText>}
+
           <ButtonGroup>
             <BackButton type="button" onClick={back}>Back</BackButton>
             <SubmitButton type="submit" disabled={submitting}>

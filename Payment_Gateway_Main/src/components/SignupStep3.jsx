@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.div`
@@ -40,6 +40,12 @@ const Input = styled.input`
   }
 `;
 
+const ErrorText = styled.p`
+  color: #dc2626;
+  margin: -0.8rem 0 1rem 0;
+  font-size: 0.875rem;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: space-between;
@@ -64,15 +70,52 @@ const NextButton = styled(Button)`
 `;
 
 export default function SignupStep3({ formData, setFormData, next, back }) {
-  const handleChange = e =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [errors, setErrors] = useState({});
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setErrors({ ...errors, [name]: '' });
+  };
+
+  const validate = () => {
+    const { addressLine1, city, state, country, zip } = formData;
+    const newErrors = {};
+
+    if (!addressLine1?.trim())
+      newErrors.addressLine1 = 'Address Line 1 is required';
+    else if (addressLine1.length < 5)
+      newErrors.addressLine1 = 'Address must be at least 5 characters';
+
+    if (!city?.trim())
+      newErrors.city = 'City is required';
+    else if (!/^[A-Za-z\s]{2,50}$/.test(city))
+      newErrors.city = 'City must contain only letters and be 2–50 characters';
+
+    if (!state?.trim())
+      newErrors.state = 'State is required';
+    else if (!/^[A-Za-z\s]{2,50}$/.test(state))
+      newErrors.state = 'State must contain only letters and be 2–50 characters';
+
+    if (!country?.trim())
+      newErrors.country = 'Country is required';
+
+    if (!zip)
+      newErrors.zip = 'ZIP code is required';
+    else if (!/^\d{5,6}$/.test(zip))
+      newErrors.zip = 'ZIP code must be 5 or 6 digits';
+
+    return newErrors;
+  };
 
   const handleNext = e => {
     e.preventDefault();
-    const { addressLine1, city, state, country, zip } = formData;
-    if (!addressLine1 || !city || !state || !country || !zip)
-      return alert('All address fields are required');
-    next();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+    } else {
+      next();
+    }
   };
 
   return (
@@ -85,42 +128,47 @@ export default function SignupStep3({ formData, setFormData, next, back }) {
             value={formData.addressLine1}
             onChange={handleChange}
             placeholder="Address Line 1"
-            required
           />
+          {errors.addressLine1 && <ErrorText>{errors.addressLine1}</ErrorText>}
+
           <Input
             name="addressLine2"
-            value={formData.addressLine2}
+            value={formData.addressLine2 || ''}
             onChange={handleChange}
             placeholder="Address Line 2"
           />
+
           <Input
             name="city"
             value={formData.city}
             onChange={handleChange}
             placeholder="City"
-            required
           />
+          {errors.city && <ErrorText>{errors.city}</ErrorText>}
+
           <Input
             name="state"
             value={formData.state}
             onChange={handleChange}
             placeholder="State"
-            required
           />
+          {errors.state && <ErrorText>{errors.state}</ErrorText>}
+
           <Input
             name="country"
             value={formData.country}
             onChange={handleChange}
             placeholder="Country"
-            required
           />
+          {errors.country && <ErrorText>{errors.country}</ErrorText>}
+
           <Input
             name="zip"
             value={formData.zip}
             onChange={handleChange}
             placeholder="ZIP Code"
-            required
           />
+          {errors.zip && <ErrorText>{errors.zip}</ErrorText>}
 
           <ButtonGroup>
             <BackButton type="button" onClick={back}>Back</BackButton>

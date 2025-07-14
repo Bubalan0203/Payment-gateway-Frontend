@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.div`
@@ -40,6 +40,12 @@ const Input = styled.input`
   }
 `;
 
+const ErrorText = styled.p`
+  color: #dc2626;
+  margin: -0.8rem 0 1rem 0;
+  font-size: 0.875rem;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: space-between;
@@ -64,15 +70,48 @@ const NextButton = styled(Button)`
 `;
 
 export default function SignupStep2({ formData, setFormData, next, back }) {
-  const handleChange = e =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [errors, setErrors] = useState({});
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setErrors({ ...errors, [name]: '' });
+  };
+
+  const validate = () => {
+    const { bankName, accountHolderName, bankAccountNumber, ifsc } = formData;
+    const newErrors = {};
+
+    if (!bankName?.trim()) newErrors.bankName = 'Bank name is required';
+
+    if (!accountHolderName?.trim())
+      newErrors.accountHolderName = 'Account holder name is required';
+
+    if (!bankAccountNumber)
+      newErrors.bankAccountNumber = 'Bank account number is required';
+    else if (!/^\d{9,18}$/.test(bankAccountNumber))
+      newErrors.bankAccountNumber = 'Enter a valid account number (9–18 digits)';
+
+    if (!ifsc)
+      newErrors.ifsc = 'IFSC code is required';
+    else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc.toUpperCase()))
+      newErrors.ifsc = 'Enter a valid IFSC code (e.g., SBIN0001234)';
+
+    return newErrors;
+  };
 
   const handleNext = e => {
     e.preventDefault();
-    const { bankAccountNumber, ifsc } = formData;
-    if (!bankAccountNumber || !ifsc)
-      return alert('Bank account number and IFSC are required');
-    next();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+    } else {
+      setFormData({
+        ...formData,
+        ifsc: formData.ifsc.toUpperCase()
+      });
+      next();
+    }
   };
 
   return (
@@ -81,17 +120,37 @@ export default function SignupStep2({ formData, setFormData, next, back }) {
         <Title>Step 2: Bank Details</Title>
         <form onSubmit={handleNext}>
           <Input
+            name="bankName"
+            value={formData.bankName || ''}
+            onChange={handleChange}
+            placeholder="Bank Name"
+          />
+          {errors.bankName && <ErrorText>{errors.bankName}</ErrorText>}
+
+          <Input
+            name="accountHolderName"
+            value={formData.accountHolderName || ''}
+            onChange={handleChange}
+            placeholder="Account Holder Name"
+          />
+          {errors.accountHolderName && <ErrorText>{errors.accountHolderName}</ErrorText>}
+
+          <Input
             name="bankAccountNumber"
-            value={formData.bankAccountNumber}
+            value={formData.bankAccountNumber || ''}
             onChange={handleChange}
             placeholder="Bank Account Number"
           />
+          {errors.bankAccountNumber && <ErrorText>{errors.bankAccountNumber}</ErrorText>}
+
           <Input
             name="ifsc"
-            value={formData.ifsc}
+            value={formData.ifsc || ''}
             onChange={handleChange}
-            placeholder="IFSC Code"
+            placeholder="IFSC Code (e.g., SBIN0001234)"
           />
+          {errors.ifsc && <ErrorText>{errors.ifsc}</ErrorText>}
+
           <ButtonGroup>
             <BackButton type="button" onClick={back}>Back</BackButton>
             <NextButton type="submit">Next</NextButton>

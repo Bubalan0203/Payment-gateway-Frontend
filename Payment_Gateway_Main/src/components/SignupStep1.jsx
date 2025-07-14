@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.div`
@@ -27,7 +27,7 @@ const Title = styled.h3`
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   border: 1px solid #ddd6fe;
   border-radius: 8px;
   font-size: 1rem;
@@ -40,6 +40,12 @@ const Input = styled.input`
   }
 `;
 
+const ErrorText = styled.p`
+  color: #dc2626;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+`;
+
 const Button = styled.button`
   width: 100%;
   padding: 0.75rem;
@@ -50,22 +56,44 @@ const Button = styled.button`
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  margin-top: 1rem;
 `;
 
 export default function SignupStep1({ formData, setFormData, next }) {
-  const handleChange = e =>
+  const [errors, setErrors] = useState({});
+
+  const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: '' }); // Clear error on change
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+
+    if (!formData.name?.trim()) newErrors.name = 'Name is required';
+    if (!formData.email?.trim()) newErrors.email = 'Email is required';
+    else if (!emailRegex.test(formData.email)) newErrors.email = 'Enter a valid email';
+    if (!formData.phone?.trim()) newErrors.phone = 'Phone number is required';
+    else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = 'Enter a valid 10-digit phone number';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!formData.securityQuestion?.trim()) newErrors.securityQuestion = 'Security question is required';
+    if (!formData.securityAnswer?.trim()) newErrors.securityAnswer = 'Answer is required';
+
+    return newErrors;
+  };
 
   const handleNext = e => {
     e.preventDefault();
-    const { name, email, password, confirmPassword, securityQuestion, securityAnswer, phone } = formData;
-    if (!name || !email || !password || !confirmPassword || !securityQuestion || !securityAnswer || !phone)
-      return alert('All fields are required');
-    if (!/^\d{10}$/.test(phone))
-      return alert('Enter a valid 10-digit phone number');
-    if (password !== confirmPassword)
-      return alert('Passwords do not match');
-    next();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+    } else {
+      next(); // All validations passed
+    }
   };
 
   return (
@@ -73,13 +101,64 @@ export default function SignupStep1({ formData, setFormData, next }) {
       <Card>
         <Title>Step 1: Personal Information</Title>
         <form onSubmit={handleNext}>
-          <Input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" />
-          <Input name="email" value={formData.email} onChange={handleChange} placeholder="Email" />
-          <Input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" />
-          <Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="Password" />
-          <Input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm Password" />
-          <Input name="securityQuestion" value={formData.securityQuestion} onChange={handleChange} placeholder="Security Question" />
-          <Input name="securityAnswer" value={formData.securityAnswer} onChange={handleChange} placeholder="Answer" />
+          <Input
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Full Name"
+          />
+          {errors.name && <ErrorText>{errors.name}</ErrorText>}
+
+          <Input
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Email"
+          />
+          {errors.email && <ErrorText>{errors.email}</ErrorText>}
+
+          <Input
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="Phone Number"
+          />
+          {errors.phone && <ErrorText>{errors.phone}</ErrorText>}
+
+          <Input
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+          />
+          {errors.password && <ErrorText>{errors.password}</ErrorText>}
+
+          <Input
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm Password"
+          />
+          {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}
+
+          <Input
+            name="securityQuestion"
+            value={formData.securityQuestion}
+            onChange={handleChange}
+            placeholder="Security Question"
+          />
+          {errors.securityQuestion && <ErrorText>{errors.securityQuestion}</ErrorText>}
+
+          <Input
+            name="securityAnswer"
+            value={formData.securityAnswer}
+            onChange={handleChange}
+            placeholder="Answer"
+          />
+          {errors.securityAnswer && <ErrorText>{errors.securityAnswer}</ErrorText>}
+
           <Button type="submit">Next</Button>
         </form>
       </Card>
