@@ -76,6 +76,21 @@ const SubmitButton = styled.button`
   }
 `;
 
+const ErrorScreen = styled.div`
+  text-align: center;
+  padding: 4rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+  max-width: 500px;
+`;
+
+const ErrorText = styled.p`
+  font-size: 1.1rem;
+  color: #b91c1c;
+  margin-top: 1rem;
+`;
+
 export default function PublicPayment() {
   const { code, amount } = useParams();
   const navigate = useNavigate();
@@ -86,9 +101,8 @@ export default function PublicPayment() {
   const [modal, setModal] = useState({ show: false, success: false, message: '' });
 
   const queryParams = new URLSearchParams(location.search);
-  const returnUrl = queryParams.get('returnUrl'); // ✅ Extract return URL
-
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const returnUrl = queryParams.get('returnUrl');
+  const parsedAmount = parseFloat(amount);
 
   useEffect(() => {
     const checkIntegration = async () => {
@@ -102,6 +116,31 @@ export default function PublicPayment() {
     };
     checkIntegration();
   }, [code, navigate]);
+
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  // 🔴 Check max limit
+  if (parsedAmount > 100000) {
+    const message = `Amount ₹${amount} exceeds the ₹1,00,000 limit.`;
+
+    if (returnUrl) {
+      const redirectUrl = new URL(returnUrl);
+      redirectUrl.searchParams.set('status', 'failed');
+      redirectUrl.searchParams.set('message', message);
+      redirectUrl.searchParams.set('amount', amount);
+      redirectUrl.searchParams.set('timestamp', new Date().toISOString());
+      window.location.href = redirectUrl.toString();
+    }
+
+    return (
+      <Wrapper>
+        <ErrorScreen>
+          <Title>Transaction Blocked</Title>
+          <ErrorText>{message}</ErrorText>
+        </ErrorScreen>
+      </Wrapper>
+    );
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -119,7 +158,7 @@ export default function PublicPayment() {
           timestamp: new Date().toLocaleString(),
           merchant: res.data?.merchantName || 'Merchant',
           reference: res.data?.reference || Math.random().toString(36).substring(2, 10).toUpperCase(),
-          returnUrl: returnUrl || null // ✅ pass to receipt page
+          returnUrl: returnUrl || null
         }
       });
     } catch (err) {
@@ -177,12 +216,7 @@ export default function PublicPayment() {
         </form>
       </FormCard>
 
-      <Modal
-        show={modal.show}
-        onHide={handleModalClose}
-        centered
-        backdrop="static"
-      >
+      <Modal show={modal.show} onHide={handleModalClose} centered backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title>{modal.success ? 'Success' : 'Failed'}</Modal.Title>
         </Modal.Header>

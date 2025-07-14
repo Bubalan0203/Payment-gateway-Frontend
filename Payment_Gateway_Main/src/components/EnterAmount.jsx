@@ -1,4 +1,3 @@
-// src/components/EnterAmount.jsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -29,6 +28,12 @@ const Input = styled.input`
   &:focus { outline: 2px solid #8b5cf6; }
 `;
 
+const ErrorText = styled.p`
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+`;
+
 const Button = styled.button`
   width: 100%;
   padding: 0.75rem 1rem;
@@ -50,22 +55,43 @@ export default function EnterAmount() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
 
-  const valid = /^\d+(\.\d{1,2})?$/.test(amount) && parseFloat(amount) > 0;
+  const amountValue = parseFloat(amount);
+  const valid =
+    /^\d+(\.\d{1,2})?$/.test(amount) &&
+    amountValue >= 1 &&
+    amountValue <= 100000;
+
+  const showError = amount && !valid;
+
+  const handleSubmit = () => {
+    if (valid) {
+      navigate(`/payment/${code}/${amount}`);
+    }
+  };
 
   return (
     <Wrapper>
       <H2>Pay to {code}</H2>
 
       <Input
-        type="text"
-        placeholder="Enter amount (₹)"
+        type="number"
+        placeholder="Enter Amount"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleSubmit();
+        }}
       />
+
+      {showError && (
+        <ErrorText>
+          Amount must be between ₹1 and ₹1,00,000 with up to 2 decimal places.
+        </ErrorText>
+      )}
 
       <Button
         disabled={!valid}
-        onClick={() => navigate(`/payment/${code}/${amount}`)}
+        onClick={handleSubmit}
       >
         Continue →
       </Button>
