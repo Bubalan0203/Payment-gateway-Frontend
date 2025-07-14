@@ -214,8 +214,10 @@ const totalPages = Math.ceil(transactions.length / transactionsPerPage);
           <span>Bank Details</span><span>{showBank ? '−' : '+'}</span>
         </AccordionHeader>
         <AccordionContent open={showBank}>
-          <Label><strong>Account No:</strong> {bank.accountNumber}</Label>
-          <Label><strong>IFSC:</strong> {bank.ifsc}</Label>
+         <p><strong>Bank&nbsp;Name:</strong> {bank.bankName || '\u00A0'}</p>
+      <p><strong>Account&nbsp;Holder:</strong> {bank.accountHolderName || '\u00A0'}</p>
+  <p><strong>Account&nbsp;No:</strong> {bank.accountNumber}</p>
+  <p><strong>IFSC:</strong> {bank.ifsc}</p>
         </AccordionContent>
       </Accordion>
 
@@ -224,20 +226,22 @@ const totalPages = Math.ceil(transactions.length / transactionsPerPage);
         <Table>
           <Thead>
             <tr>
+              <Th>Customer Transfer Time</Th>
               <Th>Transaction Amount</Th>
-              <Th>Transaction Commission</Th>
-              <Th>Status</Th>
+              <Th>Transaction Status</Th>
+              <Th>Settlement Amt</Th>
+              <Th>Settlement Status</Th>
             </tr>
           </Thead>
           <tbody>
   {currentTransactions.map((tx) => (
     <tr key={tx._id}>
-      <Td>₹{tx.originalAmount}</Td>
-      <Td>₹{tx.commission}</Td>
-      <Td>
-        <StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge>
-      </Td>
-    </tr>
+                <Td>{new Date(tx.payeeToAdminTime || tx.createdAt || Date.now()).toLocaleString()}</Td>
+                <Td>₹{tx.originalAmount}</Td>
+                <Td><StatusBadge status={tx.payeeToAdminStatus}>{tx.payeeToAdminStatus}</StatusBadge></Td>
+                <Td>₹{tx.amountToMerchant}</Td>
+                <Td><StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge></Td>
+              </tr>
   ))}
 </tbody>
         </Table>
