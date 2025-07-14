@@ -1,9 +1,8 @@
-// === src/components/AdminLogin.jsx ===
 import React, { useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaLock, FaEnvelope, FaUserShield } from 'react-icons/fa';
+import { FaUserShield } from 'react-icons/fa';
 
 const Page = styled.div`
   display: flex;
@@ -64,7 +63,7 @@ const Right = styled.div`
   justify-content: center;
 `;
 
-const FormCard = styled.div`
+const FormCard = styled.form`
   width: 100%;
   max-width: 400px;
 `;
@@ -105,9 +104,33 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const validateForm = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email.trim()) {
+      alert('Email is required');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email');
+      return false;
+    }
+    if (!password.trim()) {
+      alert('Password is required');
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
     try {
-      const res = await api.post('/auth/admin-login', { email, password });
+      const res = await api.post('/auth/admin-login', {
+        email: email.toLowerCase(),
+        password
+      });
       localStorage.setItem('admin', JSON.stringify(res.data));
       localStorage.setItem('token', res.data.token);
       navigate('/admin/dashboard');
@@ -145,26 +168,22 @@ export default function AdminLogin() {
       </Left>
 
       <Right>
-        <FormCard>
+        <FormCard onSubmit={handleLogin}>
           <Title>Welcome Back</Title>
           <SubTitle>Sign in to your PayGate admin account</SubTitle>
           <Input
             type="email"
             placeholder="Email address"
             value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
+            onChange={e => setEmail(e.target.value.toLowerCase())}
           />
           <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            required
           />
-          <Button onClick={handleLogin}>
-            Sign In
-          </Button>
+          <Button type="submit">Sign In</Button>
         </FormCard>
       </Right>
     </Page>

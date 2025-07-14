@@ -1,4 +1,3 @@
-// === src/components/UserLogin.jsx ===
 import React, { useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
@@ -64,7 +63,7 @@ const Right = styled.div`
   justify-content: center;
 `;
 
-const FormCard = styled.div`
+const FormCard = styled.form`
   width: 100%;
   max-width: 400px;
 `;
@@ -105,7 +104,31 @@ export default function UserLogin() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const validateForm = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      alert('Email is required');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email');
+      return false;
+    }
+    if (!password.trim()) {
+      alert('Password is required');
+      return false;
+    }
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters');
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async e => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('user', JSON.stringify(res.data));
@@ -145,24 +168,22 @@ export default function UserLogin() {
       </Left>
 
       <Right>
-        <FormCard>
+        <FormCard onSubmit={handleLogin}>
           <Title>Welcome Back</Title>
           <SubTitle>Sign in to your PayGate user account</SubTitle>
           <Input
             type="email"
             placeholder="Email address"
             value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
+            onChange={e => setEmail(e.target.value.toLowerCase())}
           />
           <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            required
           />
-          <Button onClick={handleLogin}>Sign In</Button>
+          <Button type="submit">Sign In</Button>
         </FormCard>
       </Right>
     </Page>
