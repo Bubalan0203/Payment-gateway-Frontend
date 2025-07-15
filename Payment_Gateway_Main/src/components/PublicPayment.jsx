@@ -92,7 +92,7 @@ export default function PublicPayment() {
 
   const [integrationValid, setIntegrationValid] = useState(false);
   const [modal, setModal] = useState({ show: false, success: false, message: '' });
-  const [showOTP, setShowOTP] = useState(false);
+  const [showOTP, setShowOTP] = useState(false); // 🔒 OTP flow disabled
 
   const queryParams = new URLSearchParams(location.search);
   const returnUrl = queryParams.get('returnUrl');
@@ -120,11 +120,37 @@ export default function PublicPayment() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setShowOTP(true); // Start OTP flow
+
+    // 🔒 OTP disabled: Direct payment
+    try {
+      const res = await api.post(`/public/pay/${code}/${amount}`, form);
+      navigate('/payment/receipt', {
+        state: {
+          transactionId: res.data?.transaction?._id || Math.random().toString(36).substring(2),
+          ...form,
+          amount,
+          status: 'Success',
+          timestamp: new Date().toLocaleString(),
+          merchant: res.data?.merchantName || 'Merchant',
+          reference: res.data?.reference || Math.random().toString(36).substring(2, 10).toUpperCase(),
+          returnUrl: returnUrl || null
+        }
+      });
+    } catch (err) {
+      navigate(returnUrl || '/', {
+        state: {
+          status: 'Failed',
+          reason: err.response?.data?.error || 'Transaction failed.'
+        }
+      });
+    }
+
+    // setShowOTP(true); // 🔒 Commented OTP step
   };
 
+  // 🔒 OTP complete handler (not used now)
+  /*
   const handleOTPComplete = async (data) => {
-    console.log(data)
     if (data.stage === 'verified') {
       try {
         const res = await api.post(`/public/pay/${code}/${amount}`, form);
@@ -158,6 +184,7 @@ export default function PublicPayment() {
       });
     }
   };
+  */
 
   const handleModalClose = () => {
     setModal({ ...modal, show: false });
@@ -174,8 +201,8 @@ return (
         <Title>Verifying OTP</Title>
         <OTPFlow
           secretKey="9D941AF69FAA5E041172D29A8B459BB4"
-          apiEndpoint="http://192.168.165.190:3002/api/check-otp-availability"
-          onComplete={handleOTPComplete}
+          apiEndpoint="http://10.34.231.43:3002/api/check-otp-availability"
+          // onComplete={handleOTPComplete}
           initialTheme="light"
         />
       </FormCard>
