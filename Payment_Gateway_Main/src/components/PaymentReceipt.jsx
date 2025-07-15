@@ -50,7 +50,6 @@ const Button = styled.button`
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.3s ease;
-
   &:hover {
     background: #7c3aed;
   }
@@ -63,55 +62,58 @@ const TimerText = styled.p`
 `;
 
 export default function PaymentReceipt() {
-  const { state } = useLocation();
+  const location = useLocation();
   const [seconds, setSeconds] = useState(5);
 
-  const {
-    transactionId,
-    name,
-    accountNumber,
-    ifsc,
-    amount,
-    status,
-    timestamp,
-    merchant,
-    reference,
-    returnUrl,
-  } = state || {};
+  const state = location.state || {};
+  const queryParams = new URLSearchParams(location.search);
 
-useEffect(() => {
-  if (!state) return window.location.href = '/';
+  // ✅ Allow fallback from query if no state passed
+  const transactionId = state.transactionId || queryParams.get('txId');
+  const reference = state.reference || queryParams.get('reference');
+  const merchant = state.merchant || queryParams.get('merchant');
+  const name = state.name || queryParams.get('name');
+  const accountNumber = state.accountNumber || queryParams.get('accountNumber');
+  const ifsc = state.ifsc || queryParams.get('ifsc');
+  const amount = state.amount || queryParams.get('amount');
+  const status = state.status || queryParams.get('status');
+  const timestamp = state.timestamp || queryParams.get('timestamp');
+  const returnUrl = state.returnUrl || queryParams.get('returnUrl');
 
-  const countdown = setInterval(() => {
-    setSeconds(prev => {
-      if (prev <= 1) {
-        clearInterval(countdown);
-        try {
-          const url = returnUrl?.startsWith('http')
-            ? new URL(returnUrl)
-            : new URL(`${window.location.origin}${returnUrl}`);
-          
-          url.searchParams.append('txId', transactionId);
-          url.searchParams.append('reference', reference);
-          url.searchParams.append('merchant', merchant);
-          url.searchParams.append('name', name);
-          url.searchParams.append('accountNumber', accountNumber);
-          url.searchParams.append('ifsc', ifsc);
-          url.searchParams.append('amount', amount);
-          url.searchParams.append('status', status);
-          url.searchParams.append('timestamp', timestamp);
+  // ✅ Redirect logic
+  useEffect(() => {
+    if (!transactionId || !returnUrl) return;
 
-          window.location.href = url.toString();
-        } catch (err) {
-          console.error('Invalid return URL');
+    const countdown = setInterval(() => {
+      setSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          try {
+            const url = returnUrl?.startsWith('http')
+              ? new URL(returnUrl)
+              : new URL(`${window.location.origin}${returnUrl}`);
+
+            url.searchParams.append('txId', transactionId);
+            url.searchParams.append('reference', reference);
+            url.searchParams.append('merchant', merchant);
+            url.searchParams.append('name', name);
+            url.searchParams.append('accountNumber', accountNumber);
+            url.searchParams.append('ifsc', ifsc);
+            url.searchParams.append('amount', amount);
+            url.searchParams.append('status', status);
+            url.searchParams.append('timestamp', timestamp);
+
+            window.location.href = url.toString();
+          } catch (err) {
+            console.error('❌ Invalid return URL:', returnUrl);
+          }
         }
-      }
-      return prev - 1;
-    });
-  }, 1000);
+        return prev - 1;
+      });
+    }, 1000);
 
-  return () => clearInterval(countdown);
-}, [state, transactionId, returnUrl]);
+    return () => clearInterval(countdown);
+  }, [transactionId, returnUrl]);
 
   const handleDownload = () => {
     const text = `

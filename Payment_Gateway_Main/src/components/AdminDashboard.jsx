@@ -441,73 +441,93 @@ const handleSettleAll = async () => {
   Accept All Payments
 </ActionBtn>
               <ScrollWrapper>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th style={{width:'60px'}}>S No</Th>
-                       <Th style={{width:'120px'}}>Merchant Id</Th>
-                      <Th style={{width:'120px'}}>Incoming<br/>Status</Th>
-                      <Th style={{width:'170px'}}>Customer Time</Th>
-                      <Th style={{width:'110px'}}>Amount</Th>
-                      <Th style={{width:'110px'}}>Comm.</Th>
-                      <Th style={{width:'140px'}}>Settlement Status</Th>
-                      <Th style={{width:'170px'}}>Settlement Time</Th>
-                      <Th style={{width:'130px'}}>Settlement Amt</Th>
-                      <Th style={{width:'120px'}}>Txn Status</Th>
-                      <Th style={{width:'140px'}}>Action</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-{txSlice.map((tx, idx) => (
-    <tr key={tx._id}>
-      <Td>{(txPage - 1) * ROWS_PER_PAGE + idx + 1}</Td>
-      <Td>{tx.integrationCode ?? '–'}</Td>
-      <Td>
-        <StatusBadge
-          status={tx.payeeToAdminStatus}
-          onClick={() => openStatusModal('payee', tx.payeeToAdminDescription)}
-        >
-          {tx.payeeToAdminStatus}
-        </StatusBadge>
-      </Td>
-      <WideCol>
-        {tx.payeeToAdminTime ? new Date(tx.payeeToAdminTime).toLocaleString() : '–'}
-      </WideCol>
-      <Td>₹{tx.originalAmount ?? '–'}</Td>
-      <Td>₹{tx.commission ?? '–'}</Td>
-      <Td>
-        <StatusBadge
-          status={tx.adminToMerchantStatus}
-          onClick={() => openStatusModal('admin', tx.adminToMerchantDescription)}
-        >
-          {tx.adminToMerchantStatus}
-        </StatusBadge>
-      </Td>
-      <WideCol>
-        {tx.adminToMerchantTime ? new Date(tx.adminToMerchantTime).toLocaleString() : '–'}
-      </WideCol>
-      <Td>₹{tx.amountToMerchant ?? '–'}</Td>
-      <Td>
-        <StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge>
-      </Td>
-      <Td>
-        {tx.overallStatus === 'pending' ? (
-          <>
-            <ActionBtn style={{ marginRight: '.5rem' }} onClick={() => handleApproveTxn(tx._id)}>
-              Approve
-            </ActionBtn>
-            <ActionBtn $variant="danger" onClick={() => openRejectModal(tx._id)}>
-              Reject
-            </ActionBtn>
-          </>
-        ) : (
-          '—'
-        )}
-      </Td>
+<Table>
+  <thead>
+    <tr>
+      <Th style={{ width: '60px' }}>S No</Th>
+      <Th style={{ width: '200px' }}>Txn IDs</Th> {/* ✅ Updated header */}
+      <Th style={{ width: '120px' }}>Merchant Id</Th>
+      <Th style={{ width: '120px' }}>Incoming<br />Status</Th>
+      <Th style={{ width: '170px' }}>Customer Time</Th>
+      <Th style={{ width: '110px' }}>Amount</Th>
+      <Th style={{ width: '110px' }}>Comm.</Th>
+      <Th style={{ width: '140px' }}>Settlement Status</Th>
+      <Th style={{ width: '170px' }}>Settlement Time</Th>
+      <Th style={{ width: '130px' }}>Settlement Amt</Th>
+      <Th style={{ width: '120px' }}>Txn Status</Th>
+      <Th style={{ width: '140px' }}>Action</Th>
     </tr>
-))}
-                  </tbody>
-                </Table>
+  </thead>
+  <tbody>
+    {txSlice.map((tx, idx) => (
+      <tr key={tx._id}>
+        <Td>{(txPage - 1) * ROWS_PER_PAGE + idx + 1}</Td>
+
+        {/* ✅ Combined Txn ID Column */}
+        <Td>
+          <div>
+            <strong>P→A:</strong> {tx.bankTransactionId || '—'}
+          </div>
+          <div>
+            <strong>A→M:</strong> {tx.settlementTransactionId || '—'}
+          </div>
+        </Td>
+
+        <Td>{tx.integrationCode ?? '–'}</Td>
+
+        <Td>
+          <StatusBadge
+            status={tx.payeeToAdminStatus}
+            onClick={() => openStatusModal('payee', tx.payeeToAdminDescription)}
+          >
+            {tx.payeeToAdminStatus}
+          </StatusBadge>
+        </Td>
+
+        <WideCol>
+          {tx.payeeToAdminTime ? new Date(tx.payeeToAdminTime).toLocaleString() : '–'}
+        </WideCol>
+
+        <Td>₹{tx.originalAmount ?? '–'}</Td>
+        <Td>₹{tx.commission ?? '–'}</Td>
+
+        <Td>
+          <StatusBadge
+            status={tx.adminToMerchantStatus}
+            onClick={() => openStatusModal('admin', tx.adminToMerchantDescription)}
+          >
+            {tx.adminToMerchantStatus}
+          </StatusBadge>
+        </Td>
+
+        <WideCol>
+          {tx.adminToMerchantTime ? new Date(tx.adminToMerchantTime).toLocaleString() : '–'}
+        </WideCol>
+
+        <Td>₹{tx.amountToMerchant ?? '–'}</Td>
+
+        <Td>
+          <StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge>
+        </Td>
+
+        <Td>
+          {tx.overallStatus === 'pending' ? (
+            <>
+              <ActionBtn style={{ marginRight: '.5rem' }} onClick={() => handleApproveTxn(tx._id)}>
+                Approve
+              </ActionBtn>
+              <ActionBtn $variant="danger" onClick={() => openRejectModal(tx._id)}>
+                Reject
+              </ActionBtn>
+            </>
+          ) : (
+            '—'
+          )}
+        </Td>
+      </tr>
+    ))}
+  </tbody>
+</Table>
               </ScrollWrapper>
 
               {/* pagination */}

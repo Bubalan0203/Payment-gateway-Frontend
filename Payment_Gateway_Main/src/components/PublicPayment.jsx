@@ -118,35 +118,55 @@ export default function PublicPayment() {
     checkIntegration();
   }, [code, navigate]);
 
-  const handleSubmit = async e => {
-    e.preventDefault();
+const handleSubmit = async e => {
+  e.preventDefault();
 
-    // 🔒 OTP disabled: Direct payment
-    try {
-      const res = await api.post(`/public/pay/${code}/${amount}`, form);
-      navigate('/payment/receipt', {
-        state: {
-          transactionId: res.data?.transaction?._id || Math.random().toString(36).substring(2),
-          ...form,
-          amount,
-          status: 'Success',
-          timestamp: new Date().toLocaleString(),
-          merchant: res.data?.merchantName || 'Merchant',
-          reference: res.data?.reference || Math.random().toString(36).substring(2, 10).toUpperCase(),
-          returnUrl: returnUrl || null
-        }
-      });
-    } catch (err) {
-      navigate(returnUrl || '/', {
+  try {
+    const res = await api.post(`/public/pay/${code}/${amount}`, form);
+    navigate('/payment/receipt', {
+      state: {
+        transactionId: res.data?.transaction?._id || Math.random().toString(36).substring(2),
+        ...form,
+        amount,
+        status: 'Success',
+        timestamp: new Date().toLocaleString(),
+        merchant: res.data?.merchantName || 'Merchant',
+        reference: res.data?.reference || Math.random().toString(36).substring(2, 10).toUpperCase(),
+        returnUrl: returnUrl || null
+      }
+    });
+  } catch (err) {
+    const reason = err.response?.data?.error || 'Transaction failed';
+
+    if (returnUrl) {
+      // 🔁 Redirect to returnUrl with failure status and reason
+      try {
+        const url = returnUrl.startsWith('http')
+          ? new URL(returnUrl)
+          : new URL(`${window.location.origin}${returnUrl}`);
+
+        url.searchParams.append('status', 'Failed');
+        url.searchParams.append('reason', reason);
+        url.searchParams.append('amount', amount);
+        url.searchParams.append('timestamp', new Date().toISOString());
+
+        window.location.href = url.toString();
+      } catch (error) {
+        console.error('❌ Invalid returnUrl format:', returnUrl);
+        alert(reason);
+        navigate('/');
+      }
+    } else {
+      // If no returnUrl, fallback to homepage with optional state
+      navigate('/', {
         state: {
           status: 'Failed',
-          reason: err.response?.data?.error || 'Transaction failed.'
+          reason
         }
       });
     }
-
-    // setShowOTP(true); // 🔒 Commented OTP step
-  };
+  }
+};
 
   // 🔒 OTP complete handler (not used now)
   /*
