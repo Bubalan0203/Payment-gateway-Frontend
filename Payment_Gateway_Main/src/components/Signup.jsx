@@ -36,12 +36,10 @@ const [formData, setFormData] = useState({
     case 1:
       return <SignupStep1 formData={formData} setFormData={setFormData} next={next} />;
     case 2:
-      return <SignupStep2 formData={formData} setFormData={setFormData} next={next} back={back} />;
-    case 3:
       return <SignupStep3 formData={formData} setFormData={setFormData} next={next} back={back} />;
-    case 4:
+    case 3:
       return <SignupStep4 formData={formData} setFormData={setFormData} back={back} />;
-    case 5:
+    case 4:
       return <SignupSuccess />;
     default:
       return null;

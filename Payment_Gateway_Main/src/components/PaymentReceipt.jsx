@@ -81,13 +81,15 @@ export default function PaymentReceipt() {
   const returnUrl = state.returnUrl || queryParams.get('returnUrl');
 
   // ✅ Redirect logic
-  useEffect(() => {
-    if (!transactionId || !returnUrl) return;
+useEffect(() => {
+  if (!transactionId) return;
 
-    const countdown = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdown);
+  const countdown = setInterval(() => {
+    setSeconds((prev) => {
+      if (prev <= 1) {
+        clearInterval(countdown);
+
+        if (returnUrl) {
           try {
             const url = returnUrl?.startsWith('http')
               ? new URL(returnUrl)
@@ -108,13 +110,13 @@ export default function PaymentReceipt() {
             console.error('❌ Invalid return URL:', returnUrl);
           }
         }
-        return prev - 1;
-      });
-    }, 1000);
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
-    return () => clearInterval(countdown);
-  }, [transactionId, returnUrl]);
-
+  return () => clearInterval(countdown);
+}, [transactionId, returnUrl]);
   const handleDownload = () => {
     const text = `
 🧾 Payment Receipt

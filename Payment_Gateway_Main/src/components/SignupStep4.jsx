@@ -114,17 +114,14 @@ const handleChange = e => {
       return;
     }
 
-    const payload = {
+   const payload = {
   name: formData.name,
   email: formData.email,
   password: formData.password,
   phone: formData.phone,
   securityQuestion: formData.securityQuestion,
   securityAnswer: formData.securityAnswer,
-  bankAccountNumber: formData.bankAccountNumber,
-  bankName: formData.bankName, // ✅ newly added
-  accountHolderName: formData.accountHolderName, // ✅ newly added
-  ifsc: formData.ifsc,
+
   address: {
     line1: formData.addressLine1,
     line2: formData.addressLine2,
@@ -133,6 +130,7 @@ const handleChange = e => {
     country: formData.country,
     zip: formData.zip,
   },
+
   kyc: {
     panCardNumber: formData.panCard.toUpperCase(),
     aadhaarNumber: formData.aadhaarCard

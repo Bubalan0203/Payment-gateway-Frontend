@@ -132,7 +132,8 @@ const AccordionContent = styled.div`
 /* ───────── component ───────── */
 export default function UserDashboard() {
   const [user, setUser] = useState(null);
-  const [bank, setBank] = useState(null);
+  const [bankAccounts, setBankAccounts] = useState([]);
+
   const [transactions, setTransactions] = useState([]);
   const [showUpi, setShowUpi] = useState(false);
 const [showBank, setShowBank] = useState(false);
@@ -150,7 +151,10 @@ const currentData = transactions.slice((currentPage - 1) * itemsPerPage, current
     const fetchInfo = async () => {
       try {
         const res1 = await api.get(`/admin/user/${data.user._id}`);
-        setBank(res1.data.bank);
+        console.log('User data from backend:', res1.data);
+setBankAccounts(res1.data.user.bankAccounts || []);
+
+
         if (res1.data.bank?.accountNumber) {
           const res2 = await api.get(`/public/user-transactions/${res1.data.bank.accountNumber}`);
           setTransactions(res2.data);
@@ -162,7 +166,8 @@ const currentData = transactions.slice((currentPage - 1) * itemsPerPage, current
     fetchInfo();
   }, []);
 
-  if (!user || !bank) return <Container>Loading...</Container>;
+  if (!user) return <Container>Loading...</Container>;
+
 
   const totalAmount = transactions.reduce((sum, tx) => sum + (tx.originalAmount || 0), 0);
   const successCount = transactions.filter(tx => tx.overallStatus === 'success').length;
@@ -270,13 +275,56 @@ const currentData = transactions.slice((currentPage - 1) * itemsPerPage, current
     <span>Bank Details</span>
     <span>{showBank ? '−' : '+'}</span>
   </AccordionHeader>
-  <AccordionContent open={showBank}>
-     <p><strong>Bank&nbsp;Name:</strong> {bank.bankName || '\u00A0'}</p>
-      <p><strong>Account&nbsp;Holder:</strong> {bank.accountHolderName || '\u00A0'}</p>
-  <p><strong>Account&nbsp;No:</strong> {bank.accountNumber}</p>
-  <p><strong>IFSC:</strong> {bank.ifsc}</p>
- 
+<AccordionContent open={showBank}>
+  {bankAccounts.length > 0 ? (
+  bankAccounts.map((bank, index) => (
+    <div key={index} style={{ marginBottom: '1rem' }}>
+      <p><strong>Bank Name:</strong> {bank.bankName}</p>
+      <p><strong>Account Holder:</strong> {bank.accountHolderName}</p>
+      <p><strong>Account No:</strong> {bank.bankAccountNumber}</p>
+      <p><strong>IFSC:</strong> {bank.ifscCode}</p>
+      <p><strong>UPI ID:</strong> {bank.uniqueCode}</p>
+      <hr />
+    </div>
+  ))
+) : (
+  <p style={{ color: '#9ca3af' }}>No bank account added yet.</p>
+)}
+
+
+  <hr style={{ margin: '1rem 0' }} />
+  <h4>Add Another Bank Account</h4>
+  <form
+    onSubmit={async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = {
+        email: user.email,
+        bankAccountNumber: formData.get('accountNumber'),
+        bankName: formData.get('bankName'),
+        accountHolderName: formData.get('holderName'),
+        ifscCode: formData.get('ifsc'),
+        phoneNumber: user.phone,
+      };
+      try {
+        const res = await api.post('/auth/add-bank-account', data);
+        alert(res.data.message);
+        window.location.reload(); // Refresh to load new account
+      } catch (err) {
+        alert(err?.response?.data?.error || 'Failed to add bank account');
+      }
+    }}
+    style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+  >
+    <input name="holderName" placeholder="Account Holder Name" required />
+    <input name="bankName" placeholder="Bank Name" required />
+    <input name="accountNumber" placeholder="Account Number" required />
+    <input name="ifsc" placeholder="IFSC Code" required />
+    <button type="submit">Add Bank Account</button>
+  </form>
 </AccordionContent>
+
+
 </Accordion>
 
      <Accordion>

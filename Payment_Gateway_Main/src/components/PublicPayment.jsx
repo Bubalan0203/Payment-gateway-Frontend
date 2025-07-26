@@ -78,7 +78,7 @@ const SubmitButton = styled.button`
 `;
 
 export default function PublicPayment() {
-  const { code, amount } = useParams();
+  const { email,code, amount } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -105,24 +105,30 @@ export default function PublicPayment() {
     }));
   };
 
-  useEffect(() => {
-    const checkIntegration = async () => {
-      try {
-        await api.get(`/public/integration/${code}`);
-        setIntegrationValid(true);
-      } catch (err) {
-        alert(err.response?.data?.error || 'Invalid integration link');
-        navigate('/');
-      }
-    };
-    checkIntegration();
-  }, [code, navigate]);
+useEffect(() => {
+  if (!email || !code || !amount) {
+    alert('Invalid payment URL');
+    navigate('/');
+    return;
+  }
 
+  const checkIntegration = async () => {
+    try {
+      await api.get(`/public/integration/${email}/${code}`);
+      setIntegrationValid(true);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Invalid integration link');
+      navigate('/');
+    }
+  };
+
+  checkIntegration();
+}, [email, code, amount, navigate]);
 const handleSubmit = async e => {
   e.preventDefault();
 
   try {
-    const res = await api.post(`/public/pay/${code}/${amount}`, form);
+    const res = await api.post(`/public/pay/${email}/${code}/${amount}`, form);
     navigate('/payment/receipt', {
       state: {
         transactionId: res.data?.transaction?._id || Math.random().toString(36).substring(2),
@@ -137,34 +143,7 @@ const handleSubmit = async e => {
     });
   } catch (err) {
     const reason = err.response?.data?.error || 'Transaction failed';
-
-    if (returnUrl) {
-      // 🔁 Redirect to returnUrl with failure status and reason
-      try {
-        const url = returnUrl.startsWith('http')
-          ? new URL(returnUrl)
-          : new URL(`${window.location.origin}${returnUrl}`);
-
-        url.searchParams.append('status', 'Failed');
-        url.searchParams.append('reason', reason);
-        url.searchParams.append('amount', amount);
-        url.searchParams.append('timestamp', new Date().toISOString());
-
-        window.location.href = url.toString();
-      } catch (error) {
-        console.error('❌ Invalid returnUrl format:', returnUrl);
-        alert(reason);
-        navigate('/');
-      }
-    } else {
-      // If no returnUrl, fallback to homepage with optional state
-      navigate('/', {
-        state: {
-          status: 'Failed',
-          reason
-        }
-      });
-    }
+    alert(reason);
   }
 };
 

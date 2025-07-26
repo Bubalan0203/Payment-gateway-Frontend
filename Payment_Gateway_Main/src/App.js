@@ -26,8 +26,8 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/payment/:code" element={<EnterAmount />} /> 
-        <Route path="/payment/:code/:amount" element={<PublicPayment />} />
+        <Route path="/payment/:email/:code" element={<EnterAmount />} /> 
+        <Route path="/payment/:email/:code/:amount" element={<PublicPayment />} />
         <Route path="/admin/user/:userId" element={<AdminUserInfo />} />
         <Route path="/signup-success" element={<SignupSuccess />} />
         <Route path="/payment/receipt" element={<PaymentReceipt />} />

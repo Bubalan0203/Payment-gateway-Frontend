@@ -1,4 +1,4 @@
-// === src/pages/AdminUserInfo.jsx (updated with collapsible design and styled status) ===
+// === src/pages/AdminUserInfo.jsx (updated for multiple bank accounts) ===
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -121,36 +121,48 @@ const Button = styled.button`
   cursor: pointer;
   &:hover { background: #5b21a3; }
   &:disabled {
-  background: #d1d5db;
-  cursor: not-allowed;
-}
+    background: #d1d5db;
+    cursor: not-allowed;
+  }
 `;
+
 export default function AdminUserInfo() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [bank, setBank] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showAddress, setShowAddress] = useState(false);
   const [showKyc, setShowKyc] = useState(false);
   const [showBank, setShowBank] = useState(false);
-const [currentPage, setCurrentPage] = useState(1);
-const transactionsPerPage = 10;
-const indexOfLastTx = currentPage * transactionsPerPage;
-const indexOfFirstTx = indexOfLastTx - transactionsPerPage;
-const currentTransactions = transactions.slice(indexOfFirstTx, indexOfLastTx);
+  const [currentPage, setCurrentPage] = useState(1);
 
-const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+  const transactionsPerPage = 10;
+  const indexOfLastTx = currentPage * transactionsPerPage;
+  const indexOfFirstTx = indexOfLastTx - transactionsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstTx, indexOfLastTx);
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+
   useEffect(() => {
     const fetchInfo = async () => {
       try {
-        const res1 = await api.get(`/admin/user/${userId}`);
-        setUser(res1.data.user);
-        setBank(res1.data.bank);
-        if (res1.data?.bank?.accountNumber) {
-          const res2 = await api.get(`/public/user-transactions/${res1.data.bank.accountNumber}`);
-          setTransactions(res2.data);
-        }
+        const res = await api.get(`/admin/user/${userId}`);
+        const userData = res.data.user;
+        setUser(userData);
+
+if (userData.bankAccounts && userData.bankAccounts.length > 0) {
+  const allTx = [];
+  for (const bank of userData.bankAccounts) {
+    try {
+      const txRes = await api.get(`/public/user-transactions/${bank.bankAccountNumber}`);
+      allTx.push(...txRes.data);
+    } catch (err) {
+      console.warn(`Failed to fetch transactions for ${bank.bankAccountNumber}`);
+    }
+  }
+  setTransactions(allTx);
+} else {
+  setTransactions([]); // No bank accounts, so no transactions
+}
       } catch (err) {
         console.error('Error fetching user info:', err);
       }
@@ -158,7 +170,7 @@ const totalPages = Math.ceil(transactions.length / transactionsPerPage);
     fetchInfo();
   }, [userId]);
 
-  if (!user || !bank) return <Container>Loading...</Container>;
+  if (!user) return <Container>Loading...</Container>;
 
   const totalAmount = transactions.reduce((sum, tx) => sum + (tx.originalAmount || 0), 0);
   const successCount = transactions.filter(tx => tx.overallStatus === 'success').length;
@@ -179,7 +191,6 @@ const totalPages = Math.ceil(transactions.length / transactionsPerPage);
         <Title>User Details</Title>
         <Label><strong>Name:</strong> {user.name}</Label>
         <Label><strong>Email:</strong> {user.email}</Label>
-        <Label><strong>UPI ID:</strong> {user.uniqueCode}</Label>
         <Label><strong>Status:</strong> {user.isActive ? 'Active' : 'Inactive'}</Label>
         <Label><strong>Security Question:</strong> {user.securityQuestion}</Label>
         <Label><strong>Security Answer:</strong> {user.securityAnswer}</Label>
@@ -211,13 +222,23 @@ const totalPages = Math.ceil(transactions.length / transactionsPerPage);
 
       <Accordion>
         <AccordionHeader onClick={() => setShowBank(!showBank)}>
-          <span>Bank Details</span><span>{showBank ? '−' : '+'}</span>
+          <span>Bank Details ({user.bankAccounts?.length || 0})</span><span>{showBank ? '−' : '+'}</span>
         </AccordionHeader>
         <AccordionContent open={showBank}>
-         <p><strong>Bank&nbsp;Name:</strong> {bank.bankName || '\u00A0'}</p>
-      <p><strong>Account&nbsp;Holder:</strong> {bank.accountHolderName || '\u00A0'}</p>
-  <p><strong>Account&nbsp;No:</strong> {bank.accountNumber}</p>
-  <p><strong>IFSC:</strong> {bank.ifsc}</p>
+          {user.bankAccounts && user.bankAccounts.length > 0 ? (
+            user.bankAccounts.map((bank, idx) => (
+              <Section key={idx} style={{ marginBottom: '1rem' }}>
+                <Label><strong>Bank Name:</strong> {bank.bankName}</Label>
+                <Label><strong>Account Holder:</strong> {bank.accountHolderName}</Label>
+                <Label><strong>Account No:</strong> {bank.bankAccountNumber}</Label>
+                <Label><strong>IFSC:</strong> {bank.ifscCode}</Label>
+                <Label><strong>Phone:</strong> {bank.phoneNumber}</Label>
+                <Label><strong>Unique Code:</strong> {bank.uniqueCode}</Label>
+              </Section>
+            ))
+          ) : (
+            <p>No bank accounts found.</p>
+          )}
         </AccordionContent>
       </Accordion>
 
@@ -234,28 +255,28 @@ const totalPages = Math.ceil(transactions.length / transactionsPerPage);
             </tr>
           </Thead>
           <tbody>
-  {currentTransactions.map((tx) => (
-    <tr key={tx._id}>
+            {currentTransactions.map((tx) => (
+              <tr key={tx._id}>
                 <Td>{new Date(tx.payeeToAdminTime || tx.createdAt || Date.now()).toLocaleString()}</Td>
                 <Td>₹{tx.originalAmount}</Td>
                 <Td><StatusBadge status={tx.payeeToAdminStatus}>{tx.payeeToAdminStatus}</StatusBadge></Td>
                 <Td>₹{tx.amountToMerchant}</Td>
                 <Td><StatusBadge status={tx.overallStatus}>{tx.overallStatus}</StatusBadge></Td>
               </tr>
-  ))}
-</tbody>
+            ))}
+          </tbody>
         </Table>
- <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-  <Button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-    Prev
-  </Button>
-  <span style={{ margin: '0 1rem' }}>
-    Page {currentPage} of {totalPages}
-  </span>
-  <Button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
-    Next
-  </Button>
-</div>
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <Button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+            Prev
+          </Button>
+          <span style={{ margin: '0 1rem' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+            Next
+          </Button>
+        </div>
       </Section>
     </Container>
   );

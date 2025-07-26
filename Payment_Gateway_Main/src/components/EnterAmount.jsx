@@ -51,7 +51,7 @@ const Button = styled.button`
 `;
 
 export default function EnterAmount() {
-  const { code } = useParams();
+  const { email, code } = useParams(); // ✅ include `email`
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
 
@@ -65,7 +65,7 @@ export default function EnterAmount() {
 
   const handleSubmit = () => {
     if (valid) {
-      navigate(`/payment/${code}/${amount}`);
+      navigate(`/payment/${email}/${code}/${amount}`); // ✅ updated path
     }
   };
 
